@@ -39,6 +39,8 @@ class mpgHttpsPost
  	var $store_id;
  	var $mpgRequest;
  	var $mpgResponse;
+ 	var $curlResponse;
+ 	var $curlError;
 
 	function mpgHttpsPost($storeid,$apitoken,$mpgRequestOBJ, $cacert_path = '')
  	{
@@ -73,7 +75,16 @@ class mpgHttpsPost
   			curl_setopt($ch, CURLOPT_CAINFO, $cacert_path);
   		}
 
-  		$response=curl_exec ($ch);
+  		$response = $this->curlResponse = curl_exec ($ch);
+
+  		// Check for cURL errors.
+  		$errno = curl_errno($ch);
+  		if ($errno) {
+  			$this->curlError = array(
+  				'error_no' => $errno,
+  				'error_msg' => curl_error($ch),
+  			);
+  		}
 
   		curl_close ($ch);
 
@@ -103,6 +114,16 @@ class mpgHttpsPost
   		return $this->mpgResponse;
 
  	}
+
+  function getCurlResponse()
+  {
+  	return $this->curlResponse;
+  }
+
+  function getCurlError()
+  {
+  	return $this->curlError;
+  }
 
  	function toXML( )
  	{
