@@ -7,15 +7,15 @@ class mpgGlobals
 {
 
 	var $Globals=array(
-        	        MONERIS_PROTOCOL => 'https',
-        	        MONERIS_HOST => array(
+        	        'MONERIS_PROTOCOL' => 'https',
+        	        'MONERIS_HOST' => array(
         	          'test' => 'esplusqa.moneris.com',
         	          'prod' => 'esplus.moneris.com',
         	        ),
-        	        MONERIS_PORT =>'443',
-               	  	MONERIS_FILE => '/gateway_us/servlet/MpgRequest',
-                  	API_VERSION  =>'US PHP Api v.3.2.0',
-                  	CLIENT_TIMEOUT => '60'
+        	        'MONERIS_PORT' =>'443',
+               	  	'MONERIS_FILE' => '/gateway_us/servlet/MpgRequest',
+                  	'API_VERSION'  =>'US PHP Api v.3.2.0',
+                  	'CLIENT_TIMEOUT' => '60'
                  	);
 
  	function mpgGlobals()
@@ -52,17 +52,17 @@ class mpgHttpsPost
   		$this->api_token= $apitoken;
   		$this->mpgRequest=$mpgRequestOBJ;
   		$dataToSend=$this->toXML();
-  		
+
   		//do post
 
   		$g=new mpgGlobals();
   		$gArray=$g->getGlobals();
   		$transactionType=$mpgRequestOBJ->getTransactionType();
 
-  		$url =  $gArray[MONERIS_PROTOCOL]."://".
-       			$gArray[MONERIS_HOST][$server].":".
-      			$gArray[MONERIS_PORT].
-       			$gArray[MONERIS_FILE];
+  		$url =  $gArray['MONERIS_PROTOCOL']."://".
+       			$gArray['MONERIS_HOST'][$server].":".
+      			$gArray['MONERIS_PORT'].
+       			$gArray['MONERIS_FILE'];
 
   		$ch = curl_init();
  		curl_setopt($ch, CURLOPT_URL,$url);
@@ -70,8 +70,8 @@ class mpgHttpsPost
   		curl_setopt ($ch, CURLOPT_HEADER, 0);
   		curl_setopt($ch, CURLOPT_POST, 1);
   		curl_setopt($ch, CURLOPT_POSTFIELDS,$dataToSend);
-  		curl_setopt($ch,CURLOPT_TIMEOUT,$gArray[CLIENT_TIMEOUT]);
-  		curl_setopt($ch,CURLOPT_USERAGENT,$gArray[API_VERSION]);
+  		curl_setopt($ch,CURLOPT_TIMEOUT,$gArray['CLIENT_TIMEOUT']);
+  		curl_setopt($ch,CURLOPT_USERAGENT,$gArray['API_VERSION']);
   		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
 
   		if (!empty($cacert_path)) {
@@ -134,7 +134,7 @@ class mpgHttpsPost
   		$req=$this->mpgRequest ;
   		$reqXMLString=$req->toXML();
 
-  		$xmlString .= "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>".
+  		$xmlString = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>".
                			"<request>".
                			"<store_id>$this->store_id</store_id>".
                			"<api_token>$this->api_token</api_token>".
@@ -725,8 +725,12 @@ class mpgResponse
 	    		}
 
  		}
-		elseif($this->isResolveData && $this->currentTag != "ResolveData")
+		elseif(!empty($this->isResolveData) && $this->currentTag != "ResolveData")
  		{
+			// Make sure the array key is set before adding to it.
+			if (!isset($this->resolveData[$this->currentTag])) {
+				$this->resolveData[$this->currentTag] = '';
+			}
 			if($this->currentTag == "data_key")
 			{
 				$this->data_key=$data;
@@ -741,10 +745,18 @@ class mpgResponse
  		elseif($this->currentTag == 'DataKey')
  		{
 			array_push($this->DataKeys,$data);
+			// Make sure the array key is set before adding to it.
+			if (!isset($this->responseData[$this->currentTag])) {
+				$this->responseData[$this->currentTag] = '';
+			}
 			$this->responseData[$this->currentTag] .=$data;
  		}
  		else
  		{
+ 			// Make sure the array key is set before adding to it.
+ 			if (!isset($this->responseData[$this->currentTag])) {
+ 				$this->responseData[$this->currentTag] = '';
+ 			}
  			$this->responseData[$this->currentTag] .=$data;
  		}
 
@@ -761,7 +773,7 @@ class mpgResponse
 		{
 			$this->isResolveData=1;
   	 	}
-  	 	elseif($this->isResolveData)
+  	 	elseif(!empty($this->isResolveData))
   	 	{
   	 		$this->resolveData[$this->currentTag]="";
   	 	}
@@ -816,70 +828,70 @@ class mpgRequest
 {
 
  	var $txnTypes =array(
-			us_preauth => array('order_id','cust_id', 'amount', 'pan', 'expdate', 'crypt_type', 'dynamic_descriptor'),
-			us_completion => array('order_id', 'comp_amount','txn_number', 'crypt_type',
+			'us_preauth' => array('order_id','cust_id', 'amount', 'pan', 'expdate', 'crypt_type', 'dynamic_descriptor'),
+			'us_completion' => array('order_id', 'comp_amount','txn_number', 'crypt_type',
                                             'commcard_invoice','commcard_tax_amount'),
-			us_purchase=> array('order_id','cust_id', 'amount', 'pan', 'expdate', 'crypt_type',
+			'us_purchase'=> array('order_id','cust_id', 'amount', 'pan', 'expdate', 'crypt_type',
                                             'commcard_invoice','commcard_tax_amount','dynamic_descriptor'),
-            		us_forcepost=> array('order_id','cust_id','amount','pan','expdate','auth_code','crypt_type','dynamic_descriptor'),
-			us_purchasecorrection => array('order_id', 'txn_number', 'crypt_type'),
-			us_refund => array('order_id', 'amount', 'txn_number', 'crypt_type'),
-			us_ind_refund => array('order_id','cust_id', 'amount','pan','expdate', 'crypt_type','dynamic_descriptor'),
-			us_cavv_preauth => array('order_id','cust_id', 'amount', 'pan','expdate', 'cavv','dynamic_descriptor'),
-			us_cavv_purchase=> array('order_id','cust_id','amount','pan','expdate', 'cavv',
+            		'us_forcepost'=> array('order_id','cust_id','amount','pan','expdate','auth_code','crypt_type','dynamic_descriptor'),
+			'us_purchasecorrection' => array('order_id', 'txn_number', 'crypt_type'),
+			'us_refund' => array('order_id', 'amount', 'txn_number', 'crypt_type'),
+			'us_ind_refund' => array('order_id','cust_id', 'amount','pan','expdate', 'crypt_type','dynamic_descriptor'),
+			'us_cavv_preauth' => array('order_id','cust_id', 'amount', 'pan','expdate', 'cavv','dynamic_descriptor'),
+			'us_cavv_purchase'=> array('order_id','cust_id','amount','pan','expdate', 'cavv',
                                                  'commcard_invoice','commcard_tax_amount','dynamic_descriptor'),
-			us_track2_preauth => array('order_id','cust_id','amount','track2','pan','expdate','pos_code','dynamic_descriptor'),
-			us_track2_completion => array('order_id', 'comp_amount','txn_number','pos_code',
+			'us_track2_preauth' => array('order_id','cust_id','amount','track2','pan','expdate','pos_code','dynamic_descriptor'),
+			'us_track2_completion' => array('order_id', 'comp_amount','txn_number','pos_code',
                                             'commcard_invoice','commcard_tax_amount'),
-			us_track2_forcepost=>array('order_id','cust_id', 'amount', 'track2','pan','expdate','pos_code','auth_code','dynamic_descriptor'),
-			us_track2_purchase =>array('order_id','cust_id','amount','track2','pan','expdate',
+			'us_track2_forcepost'=>array('order_id','cust_id', 'amount', 'track2','pan','expdate','pos_code','auth_code','dynamic_descriptor'),
+			'us_track2_purchase' =>array('order_id','cust_id','amount','track2','pan','expdate',
                                                  'commcard_invoice','commcard_tax_amount','pos_code','dynamic_descriptor'),
-			us_track2_purchasecorrection => array('order_id', 'txn_number'),
-			us_track2_refund => array('order_id', 'amount', 'txn_number'),
-			us_track2_ind_refund => array('order_id','amount','track2','pan','expdate','cust_id','pos_code','dynamic_descriptor'),
-			us_ach_debit => array('order_id','cust_id','amount'),
-			us_ach_credit => array('order_id','cust_id','amount'),
-			us_ach_reversal => array('order_id','txn_number'),
-            		us_ach_fi_enquiry => array('routing_num'),
-		        us_pinless_debit_purchase => array('order_id','amount','pan','expdate','cust_id','presentation_type','intended_use','p_account_number'),
-			us_pinless_debit_refund => array('order_id', 'amount', 'txn_number'),
-			us_opentotals => array('ecr_number'),
-			us_batchclose => array('ecr_number'),
-			us_card_verification => array('order_id','cust_id','pan','expdate'),
-			us_contactless_purchase => array('order_id','cust_id','amount','track2','pan','expdate','commcard_invoice','commcard_tax_amount','pos_code','dynamic_descriptor'),
-			us_contactless_refund => array('order_id','amount','track2','pos_code','txn_number'),
-			us_contactless_purchasecorrection => array('order_id','txn_number'),
-			us_reauth => array('order_id','cust_id','orig_order_id','txn_number','amount','crypt_type'),
-			us_recur_update => array('order_id', 'cust_id', 'pan', 'expdate', 'recur_amount','add_num_recurs', 'total_num_recurs', 'hold', 'terminate',
+			'us_track2_purchasecorrection' => array('order_id', 'txn_number'),
+			'us_track2_refund' => array('order_id', 'amount', 'txn_number'),
+			'us_track2_ind_refund' => array('order_id','amount','track2','pan','expdate','cust_id','pos_code','dynamic_descriptor'),
+			'us_ach_debit' => array('order_id','cust_id','amount'),
+			'us_ach_credit' => array('order_id','cust_id','amount'),
+			'us_ach_reversal' => array('order_id','txn_number'),
+            		'us_ach_fi_enquiry' => array('routing_num'),
+		        'us_pinless_debit_purchase' => array('order_id','amount','pan','expdate','cust_id','presentation_type','intended_use','p_account_number'),
+			'us_pinless_debit_refund' => array('order_id', 'amount', 'txn_number'),
+			'us_opentotals' => array('ecr_number'),
+			'us_batchclose' => array('ecr_number'),
+			'us_card_verification' => array('order_id','cust_id','pan','expdate'),
+			'us_contactless_purchase' => array('order_id','cust_id','amount','track2','pan','expdate','commcard_invoice','commcard_tax_amount','pos_code','dynamic_descriptor'),
+			'us_contactless_refund' => array('order_id','amount','track2','pos_code','txn_number'),
+			'us_contactless_purchasecorrection' => array('order_id','txn_number'),
+			'us_reauth' => array('order_id','cust_id','orig_order_id','txn_number','amount','crypt_type'),
+			'us_recur_update' => array('order_id', 'cust_id', 'pan', 'expdate', 'recur_amount','add_num_recurs', 'total_num_recurs', 'hold', 'terminate',
                       					'avs_street_number', 'avs_street_name', 'avs_zipcode'),
-			us_res_add_cc => array('cust_id','phone','email','note','pan','expdate','crypt_type'),
-			us_res_add_ach => array('cust_id','phone','email','note'),
-			us_res_add_pinless => array('cust_id','phone','email','note','pan','expdate','presentation_type','p_account_number'),
-			us_res_update_cc => array('data_key','cust_id','phone','email','note','pan','expdate','crypt_type'),
-			us_res_update_ach => array('data_key','cust_id','phone','email','note'),
-			us_res_update_pinless => array('data_key','cust_id','phone','email','note','pan','expdate','presentation_type','p_account_number'),
-			us_res_delete => array('data_key'),
-			us_res_lookup_full => array('data_key'),
-			us_res_lookup_masked => array('data_key'),
-			us_res_get_expiring => array(),
-			us_res_purchase_cc => array('data_key','order_id','cust_id','amount','crypt_type','commcard_invoice','commcard_tax_amount','dynamic_descriptor'),
-			us_res_purchase_ach => array('data_key','order_id','cust_id','amount'),
-			us_res_purchase_pinless => array('data_key','order_id','cust_id','amount','intended_use','p_account_number'),
-			us_res_preauth_cc => array('data_key','order_id','cust_id','amount','crypt_type','dynamic_descriptor'),
-			us_res_ind_refund_cc => array('data_key','order_id','cust_id','amount','crypt_type','dynamic_descriptor'),
-			us_res_ind_refund_ach => array('data_key','order_id','cust_id','amount'),
-			us_res_tokenize_cc => array('order_id','txn_number','cust_id','phone','email','note'),
-			us_enc_track2_preauth => array('order_id','cust_id','amount','enc_track2','pos_code','device_type', 'dynamic_descriptor'),
-			us_enc_track2_purchase => array('order_id','cust_id','amount','enc_track2','pos_code','device_type', 'dynamic_descriptor'),
-			us_enc_track2_ind_refund => array('order_id','cust_id','amount','enc_track2','pos_code','device_type', 'dynamic_descriptor'),
-			us_enc_track2_forcepost => array('order_id', 'cust_id', 'amount', 'enc_track2', 'device_type', 'pos_code', 'auth_code', 'dynamic_descriptor'),
-			us_enc_purchase => array('order_id', 'cust_id', 'amount', 'enc_track2', 'device_type', 'crypt_type', 'dynamic_descriptor'),
-			us_enc_ind_refund => array('order_id', 'cust_id', 'amount', 'enc_track2', 'device_type', 'crypt_type', 'dynamic_descriptor'),
-			us_enc_preauth => array('order_id', 'cust_id', 'amount', 'enc_track2', 'device_type', 'crypt_type', 'dynamic_descriptor'),
-			us_enc_forcepost => array('order_id', 'cust_id', 'amount', 'enc_track2', 'device_type', 'auth_code', 'crypt_type', 'dynamic_descriptor'),
-			us_enc_card_verification => array('order_id', 'cust_id', 'enc_track2', 'device_type'),
-			us_enc_res_add_cc => array('enc_track2', 'device_type', 'crypt_type'),
-			us_enc_res_update_cc => array('enc_track2', 'device_type', 'crypt_type')
+			'us_res_add_cc' => array('cust_id','phone','email','note','pan','expdate','crypt_type'),
+			'us_res_add_ach' => array('cust_id','phone','email','note'),
+			'us_res_add_pinless' => array('cust_id','phone','email','note','pan','expdate','presentation_type','p_account_number'),
+			'us_res_update_cc' => array('data_key','cust_id','phone','email','note','pan','expdate','crypt_type'),
+			'us_res_update_ach' => array('data_key','cust_id','phone','email','note'),
+			'us_res_update_pinless' => array('data_key','cust_id','phone','email','note','pan','expdate','presentation_type','p_account_number'),
+			'us_res_delete' => array('data_key'),
+			'us_res_lookup_full' => array('data_key'),
+			'us_res_lookup_masked' => array('data_key'),
+			'us_res_get_expiring' => array(),
+			'us_res_purchase_cc' => array('data_key','order_id','cust_id','amount','crypt_type','commcard_invoice','commcard_tax_amount','dynamic_descriptor'),
+			'us_res_purchase_ach' => array('data_key','order_id','cust_id','amount'),
+			'us_res_purchase_pinless' => array('data_key','order_id','cust_id','amount','intended_use','p_account_number'),
+			'us_res_preauth_cc' => array('data_key','order_id','cust_id','amount','crypt_type','dynamic_descriptor'),
+			'us_res_ind_refund_cc' => array('data_key','order_id','cust_id','amount','crypt_type','dynamic_descriptor'),
+			'us_res_ind_refund_ach' => array('data_key','order_id','cust_id','amount'),
+			'us_res_tokenize_cc' => array('order_id','txn_number','cust_id','phone','email','note'),
+			'us_enc_track2_preauth' => array('order_id','cust_id','amount','enc_track2','pos_code','device_type', 'dynamic_descriptor'),
+			'us_enc_track2_purchase' => array('order_id','cust_id','amount','enc_track2','pos_code','device_type', 'dynamic_descriptor'),
+			'us_enc_track2_ind_refund' => array('order_id','cust_id','amount','enc_track2','pos_code','device_type', 'dynamic_descriptor'),
+			'us_enc_track2_forcepost' => array('order_id', 'cust_id', 'amount', 'enc_track2', 'device_type', 'pos_code', 'auth_code', 'dynamic_descriptor'),
+			'us_enc_purchase' => array('order_id', 'cust_id', 'amount', 'enc_track2', 'device_type', 'crypt_type', 'dynamic_descriptor'),
+			'us_enc_ind_refund' => array('order_id', 'cust_id', 'amount', 'enc_track2', 'device_type', 'crypt_type', 'dynamic_descriptor'),
+			'us_enc_preauth' => array('order_id', 'cust_id', 'amount', 'enc_track2', 'device_type', 'crypt_type', 'dynamic_descriptor'),
+			'us_enc_forcepost' => array('order_id', 'cust_id', 'amount', 'enc_track2', 'device_type', 'auth_code', 'crypt_type', 'dynamic_descriptor'),
+			'us_enc_card_verification' => array('order_id', 'cust_id', 'enc_track2', 'device_type'),
+			'us_enc_res_add_cc' => array('enc_track2', 'device_type', 'crypt_type'),
+			'us_enc_res_update_cc' => array('enc_track2', 'device_type', 'crypt_type')
 
 			          );
 
@@ -911,6 +923,7 @@ class mpgRequest
 	{
 
  		$tmpTxnArray=$this->txnArray;
+ 		$xmlString = '';
  		$txnArrayLen=count($tmpTxnArray); //total number of transactions
 
  		for($x=0;$x < $txnArrayLen;$x++)
@@ -927,8 +940,9 @@ class mpgRequest
 
 			for($i=0;$i < $txnTypeArrayLen ;$i++)
     			{
+     				 $value = (isset($txn[$txnTypeArray[$i]])) ? $txn[$txnTypeArray[$i]] : '';
      				 $txnXMLString  .="<$txnTypeArray[$i]>"   //begin tag
-                       				.$txn[$txnTypeArray[$i]] // data
+                       				.$value // data
                        				. "</$txnTypeArray[$i]>"; //end tag
     			}
 
@@ -1235,6 +1249,9 @@ class mpgTransaction
 	var $txn;
 	var $custInfo = null;
 	var $recur = null;
+	var $cvd = null;
+	var $avs = null;
+	var $ach = null;
 
 	function mpgTransaction($txn)
 	{
